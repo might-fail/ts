@@ -1,6 +1,6 @@
 {
   "name": "@might/fail",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "exports": {
     ".": "./src/index.ts",
     "./go": "./src/go/index.ts"

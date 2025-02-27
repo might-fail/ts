@@ -1,6 +1,6 @@
 {
   "name": "might-fail",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "A better way to handle errors in JavaScript and TypeScript. Handle async and sync errors without `try` and `catch` blocks.",
   "main": "dist/cjs/index.cjs",
   "module": "dist/index.js",

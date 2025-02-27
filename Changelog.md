@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.4] - 2025-02-27
+
+### Added
+
+#### `build.ts`
+- .cjs extension to CommonJS output files
+- a plugin to fix require() statements to reference .cjs files
+
+### Changed
+- The build process for npm uses a build.ts file to build the project with esbuild. This gives esm js files the .js extension which is needed for some environments.
+
+
 ## [0.7.3] - 2024-12-11
 
 ### Changed
