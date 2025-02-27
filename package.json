@@ -51,14 +51,14 @@
     "typescript"
   ],
   "devDependencies": {
-    "@types/node": "^22.7.5",
-    "esbuild": "^0.24.0",
-    "glob": "7.2.3",
     "@types/glob": "^8.0.0",
+    "@types/node": "^22.7.5",
+    "esbuild": "^0.25.0",
+    "glob": "7.2.3",
     "jsdoc-to-markdown": "^9.0.2",
-    "typedoc": "^0.26.8",
+    "typedoc": "^0.27.9",
     "typedoc-plugin-markdown": "^4.2.9",
     "typescript": "^5.6.2",
-    "vitest": "^2.1.1"
+    "vitest": "^3.0.7"
   }
 }
