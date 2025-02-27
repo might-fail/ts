@@ -2,19 +2,19 @@
   "name": "might-fail",
   "version": "0.7.3",
   "description": "A better way to handle errors in JavaScript and TypeScript. Handle async and sync errors without `try` and `catch` blocks.",
-  "main": "dist/cjs/index.js",
+  "main": "dist/cjs/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "require": "./dist/cjs/index.js",
+      "require": "./dist/cjs/index.cjs",
       "types": "./dist/index.d.ts"
     },
     "./go": {
       "import": "./dist/go/index.js",
-      "require": "./dist/cjs/go/index.js",
+      "require": "./dist/cjs/go/index.cjs",
       "types": "./dist/go/index.d.ts"
     }
   },
@@ -26,6 +26,7 @@
   },
   "files": [
     "dist/**/*.js",
+    "dist/**/*.cjs",
     "dist/**/*.d.ts",
     "dist/**/*.ts"
   ],
@@ -61,4 +62,3 @@
     "vitest": "^2.1.1"
   }
 }
-

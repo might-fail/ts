@@ -16,6 +16,40 @@ import { build } from "esbuild"
 import type { Plugin, PluginBuild, BuildOptions } from "esbuild"
 import glob from "glob"
 
+// Plugin to fix CommonJS imports by appending .cjs to require statements
+const fixCjsImportsPlugin = (): Plugin => ({
+  name: "fix-cjs-imports",
+  setup(build: PluginBuild) {
+    // Run in the onEnd hook after all files have been written
+    build.onEnd((result) => {
+      // Only proceed if the build is successful
+      if (result.errors.length === 0) {
+        // Get the output directory from the build options
+        const outdir = build.initialOptions.outdir
+        if (!outdir) return
+
+        // Find all .cjs files in the output directory
+        const files = glob.sync(`${outdir}/**/*.cjs`)
+
+        files.forEach((file) => {
+          let content = fs.readFileSync(file, "utf8")
+
+          // Replace all require('./something') with require('./something.cjs')
+          content = content.replace(/require\(["'](\.[^"']+)["']\)/g, (match, importPath) => {
+            // Don't add .cjs if it already has an extension
+            if (path.extname(importPath) !== "") {
+              return match
+            }
+            return `require('${importPath}.cjs')`
+          })
+
+          fs.writeFileSync(file, content)
+        })
+      }
+    })
+  }
+})
+
 const entryPoints = glob.sync("./src/**/*.ts", {
   ignore: ["./src/**/*.test.ts", "./src/mod.ts", "./src/middleware.ts", "./src/deno/**/*.ts"]
 })
@@ -65,6 +99,8 @@ const cjsBuild = () =>
     outbase: "./src",
     outdir: "./dist/cjs",
     format: "cjs",
+    outExtension: { ".js": ".cjs" },
+    plugins: [fixCjsImportsPlugin()],
     tsconfig: "tsconfig.cjs.json"
   })
 
