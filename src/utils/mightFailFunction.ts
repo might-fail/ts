@@ -1,7 +1,7 @@
-import { type Either } from "../Either"
-import { handleError } from "./errors"
-import { createEither } from "./createEither"
-import { MightFailFunction } from "./utils.type"
+import { type Either } from "../Either.js"
+import { handleError } from "./errors.js"
+import { createEither } from "./createEither.js"
+import { MightFailFunction } from "./utils.type.js"
 
 export const mightFailFunction: MightFailFunction<"standard"> = async function <T, E extends Error = Error>(
   promise: T

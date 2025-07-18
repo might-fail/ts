@@ -1,9 +1,9 @@
-import { type Either } from "./Either"
-import { makeProxyHandler } from "./utils/staticMethodsProxy"
-import { handleError } from "./utils/errors"
-import { createEither } from "./utils/createEither"
-import { MightFail } from "./utils/utils.type"
-import { mightFailFunction } from "./utils/mightFailFunction"
+import { type Either } from "./Either.js"
+import { makeProxyHandler } from "./utils/staticMethodsProxy.js"
+import { handleError } from "./utils/errors.js"
+import { createEither } from "./utils/createEither.js"
+import { MightFail } from "./utils/utils.type.js"
+import { mightFailFunction } from "./utils/mightFailFunction.js"
 
 /**
  * Wraps a promise in an Either to safely handle both its resolution and rejection. This function

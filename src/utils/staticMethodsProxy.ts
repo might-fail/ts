@@ -1,4 +1,4 @@
-import { EitherMode, MightFailFunction } from "./utils.type"
+import { EitherMode, MightFailFunction } from "./utils.type.js"
 
 export const makeProxyHandler = <TMightFailFunction extends MightFailFunction<EitherMode>>(
   mightFailFunction: TMightFailFunction

@@ -1,5 +1,5 @@
-import type { Either as StandardEither } from "../Either"
-import type { Either as GoEither } from "../go/Either"
+import type { Either as StandardEither } from "../Either.js"
+import type { Either as GoEither } from "../go/Either.js"
 
 export type EitherMode = "standard" | "go" | "any"
 

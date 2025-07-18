@@ -1,5 +1,5 @@
-import { type Either } from "./Either"
-import { mightFail, mightFailSync } from "./mightFail"
+import { type Either } from "./Either.js"
+import { mightFail, mightFailSync } from "./mightFail.js"
 
 /**
  * Utility type that unwraps a Promise type. If T is a Promise, it extracts the type the Promise resolves to,

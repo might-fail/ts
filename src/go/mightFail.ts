@@ -1,9 +1,9 @@
-import standard from "../index"
-import { type Either } from "./Either"
-import { createEither } from "../utils/createEither"
-import { makeProxyHandler } from "../utils/staticMethodsProxy"
-import { MightFail, MightFailFunction } from "../utils/utils.type"
-import { mightFailFunction as standardMightFailFunction } from "../utils/mightFailFunction"
+import standard from "../index.js"
+import { type Either } from "./Either.js"
+import { createEither } from "../utils/createEither.js"
+import { makeProxyHandler } from "../utils/staticMethodsProxy.js"
+import { MightFail, MightFailFunction } from "../utils/utils.type.js"
+import { mightFailFunction as standardMightFailFunction } from "../utils/mightFailFunction.js"
 
 const mightFailFunction: MightFailFunction<"go"> = async function <T, E extends Error = Error>(promise: T) {
   const { result, error } = await standardMightFailFunction(promise)
