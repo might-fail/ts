@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.5] - 2025-08-27
+
+### Changed
+- Added .js extensions which is necessary when using moduleResolution: "node16" or "nodenext" in TypeScript.
+
 ## [0.7.4] - 2025-02-27
 
 ### Added
