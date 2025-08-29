@@ -106,6 +106,21 @@ const posts = result.data
 posts.map((post) => console.log(post.title));
 ```
 
+### `.map`
+
+```ts
+const get = makeMightFail(axios.get);
+const [ error, result ] = await get("/posts").map(post => post.title);
+
+if (error) {
+  // handle error
+  return;
+}
+
+const titles = result.data
+titles.map((post) => console.log(title));
+```
+
 ## Sync
 
 

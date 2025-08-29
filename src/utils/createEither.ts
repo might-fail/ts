@@ -1,6 +1,6 @@
-import { AnyEither, EitherMode } from "./utils.type.js"
-import type { Either as StandardEither } from "../Either.js"
-import type { Either as GoEither } from "../go/Either.js"
+import { AnyEither, EitherMode } from "./utils.type"
+import type { Either as StandardEither } from "../Either"
+import type { Either as GoEither } from "../go/Either"
 
 // This is not how we intended the tuple feature to work but this is the only way we could currently get TypeScript to play nice
 // this really should just be an interator on the either object, but it's much more complicated because of TS.

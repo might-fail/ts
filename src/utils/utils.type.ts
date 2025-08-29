@@ -1,5 +1,33 @@
 import type { Either as StandardEither } from "../Either.js"
 import type { Either as GoEither } from "../go/Either.js"
+import { createEither } from "./createEither.js"
+
+export interface MightFailPromise<T, E extends Error = Error> extends Promise<StandardEither<T, E>> {
+  map<U>(fn: (value: T) => U): MightFailPromise<U, E>
+}
+
+export function createMightFailPromise<T, E extends Error = Error>(
+  basePromise: Promise<StandardEither<T, E>>
+): MightFailPromise<T, E> {
+  return Object.assign(basePromise, {
+    map<U>(fn: (value: T) => U): MightFailPromise<U, E> {
+      const mappedPromise = basePromise.then(either => {
+        if (either.error) {
+          return createEither<U, E>({ error: either.error, result: undefined }) as StandardEither<U, E>
+        }
+        try {
+          const mappedValue = fn(either.result!)
+          return createEither<U, E>({ error: undefined, result: mappedValue }) as StandardEither<U, E>
+        } catch (err) {
+          const error = err instanceof Error ? err as E : new Error(String(err)) as E
+          return createEither<U, E>({ error, result: undefined }) as StandardEither<U, E>
+        }
+      })
+      
+      return createMightFailPromise(mappedPromise)
+    }
+  }) as MightFailPromise<T, E>
+}
 
 export type EitherMode = "standard" | "go" | "any"
 
@@ -7,13 +35,11 @@ export type AnyEither<T, E extends Error = Error> = StandardEither<T, E> | GoEit
 
 export type MightFailFunction<TEitherMode extends EitherMode> = <T, E extends Error = Error>(
   promise: T
-) => Promise<
-  TEitherMode extends "standard"
-    ? StandardEither<Awaited<T>, E>
+) => TEitherMode extends "standard"
+    ? MightFailPromise<Awaited<T>, E>
     : TEitherMode extends "go"
-      ? GoEither<Awaited<T>, E>
-      : AnyEither<Awaited<T>, E>
->
+      ? Promise<GoEither<Awaited<T>, E>>
+      : MightFailPromise<Awaited<T>, E> | Promise<GoEither<Awaited<T>, E>>
 
 export type PromiseFulfilledResult<T> = {
   status: "fulfilled"
@@ -39,13 +65,11 @@ export interface PromiseStaticMethods<TEitherMode extends EitherMode> {
    */
   all<T extends readonly unknown[] | []>(
     values: T
-  ): Promise<
-    TEitherMode extends "standard"
-      ? Awaited<StandardEither<{ -readonly [P in keyof T]: Awaited<T[P]> }>>
+  ): TEitherMode extends "standard"
+      ? MightFailPromise<{ -readonly [P in keyof T]: Awaited<T[P]> }>
       : TEitherMode extends "go"
-        ? Awaited<GoEither<{ -readonly [P in keyof T]: Awaited<T[P]> }>>
-        : Awaited<AnyEither<{ -readonly [P in keyof T]: Awaited<T[P]> }>>
-  >
+        ? Promise<GoEither<{ -readonly [P in keyof T]: Awaited<T[P]> }>>
+        : MightFailPromise<{ -readonly [P in keyof T]: Awaited<T[P]> }> | Promise<GoEither<{ -readonly [P in keyof T]: Awaited<T[P]> }>>
 
   /**
    * (From lib.es2025.iterable.d.ts)
@@ -56,13 +80,11 @@ export interface PromiseStaticMethods<TEitherMode extends EitherMode> {
    */
   all<T>(
     values: Iterable<T | PromiseLike<T>>
-  ): Promise<
-    TEitherMode extends "standard"
-      ? Awaited<StandardEither<T[]>>
+  ): TEitherMode extends "standard"
+      ? MightFailPromise<T[]>
       : TEitherMode extends "go"
-        ? Awaited<GoEither<T[]>>
-        : Awaited<AnyEither<T[]>>
-  >
+        ? Promise<GoEither<T[]>>
+        : MightFailPromise<T[]> | Promise<GoEither<T[]>>
 
   /**
    * Wraps a Promise.race call in a mightFail function.
@@ -73,13 +95,11 @@ export interface PromiseStaticMethods<TEitherMode extends EitherMode> {
    */
   race<T>(
     values: Iterable<T | PromiseLike<T>>
-  ): Promise<
-    TEitherMode extends "standard"
-      ? Awaited<StandardEither<T>>
+  ): TEitherMode extends "standard"
+      ? MightFailPromise<T>
       : TEitherMode extends "go"
-        ? Awaited<GoEither<T>>
-        : Awaited<AnyEither<T>>
-  >
+        ? Promise<GoEither<T>>
+        : MightFailPromise<T> | Promise<GoEither<T>>
 
   /**
    * Wraps a Promise.race call in a mightFail function.
@@ -89,13 +109,11 @@ export interface PromiseStaticMethods<TEitherMode extends EitherMode> {
    */
   race<T extends readonly unknown[] | []>(
     values: T
-  ): Promise<
-    TEitherMode extends "standard"
-      ? Awaited<StandardEither<T[number]>>
+  ): TEitherMode extends "standard"
+      ? MightFailPromise<T[number]>
       : TEitherMode extends "go"
-        ? Awaited<GoEither<T[number]>>
-        : Awaited<AnyEither<T[number]>>
-  >
+        ? Promise<GoEither<T[number]>>
+        : MightFailPromise<T[number]> | Promise<GoEither<T[number]>>
 
   /**
    * Wraps a Promise.any call in a mightFail function.
@@ -106,13 +124,11 @@ export interface PromiseStaticMethods<TEitherMode extends EitherMode> {
    */
   any<T extends readonly unknown[] | []>(
     values: T
-  ): Promise<
-    TEitherMode extends "standard"
-      ? StandardEither<Awaited<T[number]>, AggregateError>
+  ): TEitherMode extends "standard"
+      ? MightFailPromise<T[number], AggregateError>
       : TEitherMode extends "go"
-        ? GoEither<Awaited<T[number]>, AggregateError>
-        : AnyEither<Awaited<T[number]>, AggregateError>
-  >
+        ? Promise<GoEither<T[number], AggregateError>>
+        : MightFailPromise<T[number], AggregateError> | Promise<GoEither<T[number], AggregateError>>
 
   /**
    * Wraps a Promise.any call in a mightFail function.
@@ -123,11 +139,9 @@ export interface PromiseStaticMethods<TEitherMode extends EitherMode> {
    */
   any<T>(
     values: Iterable<T | PromiseLike<T>>
-  ): Promise<
-    TEitherMode extends "standard"
-      ? StandardEither<Awaited<T>, AggregateError>
+  ): TEitherMode extends "standard"
+      ? MightFailPromise<T, AggregateError>
       : TEitherMode extends "go"
-        ? GoEither<Awaited<T>, AggregateError>
-        : AnyEither<Awaited<T>, AggregateError>
-  >
+        ? Promise<GoEither<T, AggregateError>>
+        : MightFailPromise<T, AggregateError> | Promise<GoEither<T, AggregateError>>
 }

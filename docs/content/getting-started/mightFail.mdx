@@ -117,3 +117,68 @@ posts.map((post) => console.log(post.title));
 </Tab>
 </Tabs>
 
+## Transforming Results with `.map`
+
+You can transform successful results using the `.map` method without having to handle errors repeatedly:
+
+<Tabs>
+
+<Tab name="tuple">
+```ts
+// Transform successful results
+const [error, titles] = await mightFail(fetch("/posts"))
+  .map(response => response.json())
+  .map(posts => posts.map(post => post.title))
+
+if (error) {
+  // handle any error from the chain
+  return
+}
+
+console.log(titles) // Array of post titles
+```
+</Tab>
+
+<Tab name="object">
+```ts
+// Transform successful results  
+const { error, result: titles } = await mightFail(fetch("/posts"))
+  .map(response => response.json())
+  .map(posts => posts.map(post => post.title))
+
+if (error) {
+  // handle any error from the chain
+  return
+}
+
+console.log(titles) // Array of post titles
+```
+</Tab>
+
+<Tab name="go">
+```ts
+// Transform successful results
+const [titles, error] = await mightFail(fetch("/posts"))
+  .map(response => response.json())
+  .map(posts => posts.map(post => post.title))
+
+if (error) {
+  // handle any error from the chain
+  return
+}
+
+console.log(titles) // Array of post titles
+```
+</Tab>
+</Tabs>
+
+The `.map` method:
+- Only runs if the previous step succeeded
+- Catches any errors thrown during transformation
+- Can be chained multiple times
+- Maintains full type safety
+
+<Note>
+Learn more about transformations in the [`.map` Transformations](/map-transformations) guide.
+</Note>
+

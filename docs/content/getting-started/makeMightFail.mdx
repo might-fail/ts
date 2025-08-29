@@ -51,4 +51,86 @@ posts.map((post) => console.log(post.title));
 </Tab>
 </Tabs>
 
+## Transforming Results with `.map`
+
+You can transform results directly on the returned promise:
+
+<Tabs>
+<Tab name="tuple">
+```ts
+const get = makeMightFail(axios.get);
+const [error, titles] = await get("/posts")
+  .map(response => response.data)
+  .map(posts => posts.map(post => post.title))
+
+if (error) {
+  // handle error
+  return;
+}
+
+console.log(titles); // Array of post titles
+```
+</Tab>
+<Tab name="object">
+```ts
+const get = makeMightFail(axios.get);
+const { error, result: titles } = await get("/posts")
+  .map(response => response.data)
+  .map(posts => posts.map(post => post.title))
+
+if (error) {
+  // handle error
+  return;
+}
+
+console.log(titles); // Array of post titles
+```
+</Tab>
+<Tab name="go">
+```ts
+const get = makeMightFail(axios.get);
+const [titles, error] = await get("/posts")
+  .map(response => response.data)
+  .map(posts => posts.map(post => post.title))
+
+if (error) {
+  // handle error
+  return;
+}
+
+console.log(titles); // Array of post titles
+```
+</Tab>
+</Tabs>
+
+This is particularly useful for API responses where you want to extract and transform specific data:
+
+```ts
+const fetchUser = makeMightFail(async (id: number) => {
+  const response = await fetch(`/users/${id}`)
+  return response.json()
+})
+
+const [error, userSummary] = await fetchUser(123)
+  .map(user => ({
+    name: user.name,
+    email: user.email,
+    isActive: user.lastSeen > Date.now() - 86400000 // 24h
+  }))
+  .map(summary => ({
+    ...summary,
+    displayName: summary.isActive ? `${summary.name} (Online)` : summary.name
+  }))
+
+if (error) {
+  console.error('Failed to fetch user:', error.message)
+  return
+}
+
+console.log(userSummary)
+```
+
+<Note>
+Learn more about transformations in the [`.map` Transformations](/map-transformations) guide.
+</Note>
 

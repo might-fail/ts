@@ -11,9 +11,11 @@
 - `await mightFail.race([])`
 - `await mightFail.any([])`
 
-These are identical to the static methods on `Promise` but they return an [`Either`](/either) type.
+These are identical to the static methods on `Promise` but they return an [`Either`](/either) type and support [`.map` transformations](/map-transformations).
 
-## Example
+## Basic Examples
+
+### `mightFail.all`
 
 ```ts
 import { mightFail } from 'might-fail'
@@ -31,3 +33,155 @@ if (error) {
 // result is an array of the results of the promises
 console.log(result.map((r) => r.message))
 ```
+
+### `mightFail.race`
+
+```ts
+const [error, winner] = await mightFail.race([
+  fetch('/api/server1/data'),
+  fetch('/api/server2/data'),
+  fetch('/api/server3/data')
+]);
+
+if (error) {
+  console.error('All servers failed')
+  return
+}
+
+console.log('Fastest server responded:', winner)
+```
+
+### `mightFail.any`
+
+```ts
+const [error, success] = await mightFail.any([
+  tryDatabase1(),
+  tryDatabase2(), 
+  tryDatabase3()
+]);
+
+if (error) {
+  console.error('All databases failed:', error.message)
+  return
+}
+
+console.log('At least one database succeeded:', success)
+```
+
+## With `.map` Transformations
+
+All static methods support `.map` for transforming results:
+
+### Transform `mightFail.all` Results
+
+```ts
+// Combine multiple API calls and transform the result
+const [error, projectSummary] = await mightFail.all([
+  fetchProject(projectId),
+  fetchProjectMembers(projectId),
+  fetchProjectStats(projectId)
+]).map(([project, members, stats]) => ({
+  name: project.name,
+  memberCount: members.length,
+  totalCommits: stats.commits,
+  isActive: stats.lastCommit > Date.now() - 86400000 // 24h
+})).map(summary => ({
+  ...summary,
+  description: `${summary.name} has ${summary.memberCount} members and ${summary.totalCommits} commits`
+}))
+
+if (error) {
+  console.error('Failed to load project data:', error.message)
+  return
+}
+
+console.log(projectSummary)
+```
+
+### Transform Race Winner
+
+```ts
+const [error, fastestData] = await mightFail.race([
+  fetchFromCDN(),
+  fetchFromMainServer(),
+  fetchFromBackupServer()
+]).map(response => response.json())
+  .map(data => ({
+    ...data,
+    source: 'fastest-available',
+    fetchedAt: new Date().toISOString()
+  }))
+
+if (error) {
+  console.error('All sources failed')
+  return
+}
+
+console.log('Data from fastest source:', fastestData)
+```
+
+### Process First Success
+
+```ts
+const [error, processedResult] = await mightFail.any([
+  tryExpensiveOperation(),
+  tryFallbackOperation(),
+  tryLastResortOperation()
+]).map(result => ({
+  value: result.data,
+  processedAt: Date.now(),
+  success: true
+}))
+
+if (error) {
+  console.error('All operations failed')
+  return
+}
+
+console.log('Successfully processed:', processedResult)
+```
+
+## Real-World Example
+
+Here's a practical example that combines multiple data sources:
+
+```ts
+async function loadUserDashboard(userId: string) {
+  // Fetch user data and related information in parallel
+  const [error, dashboard] = await mightFail.all([
+    fetchUser(userId),
+    fetchUserPosts(userId),
+    fetchUserNotifications(userId),
+    fetchUserSettings(userId)
+  ]).map(([user, posts, notifications, settings]) => ({
+    user: {
+      id: user.id,
+      name: user.name,
+      avatar: user.avatar
+    },
+    content: {
+      posts: posts.filter(p => p.published),
+      unreadNotifications: notifications.filter(n => !n.read).length
+    },
+    preferences: settings
+  })).map(data => ({
+    ...data,
+    summary: {
+      hasNewContent: data.content.unreadNotifications > 0,
+      postCount: data.content.posts.length,
+      welcomeMessage: `Welcome back, ${data.user.name}!`
+    }
+  }))
+
+  if (error) {
+    console.error('Failed to load dashboard:', error.message)
+    return null
+  }
+
+  return dashboard
+}
+```
+
+<Note>
+All static methods preserve the iterable nature of the `Either` type, so you can use both object destructuring `{ error, result }` and array destructuring `[error, result]`.
+</Note>

@@ -1,0 +1,210 @@
+# `.map` Transformations
+
+The `.map` method allows you to transform successful results without having to handle errors repeatedly. It provides a functional programming style for chaining transformations while preserving error handling.
+
+## Basic Usage
+
+Instead of awaiting, checking for errors, and then transforming:
+
+```ts
+// Without .map - more verbose
+const [error1, userData] = await mightFail(fetchUser(123))
+if (error1) return
+
+const [error2, userName] = await mightFailSync(() => userData.name.toUpperCase())
+if (error2) return
+
+console.log(userName)
+```
+
+You can chain transformations directly:
+
+```ts
+// With .map - concise and readable
+const [error, userName] = await mightFail(fetchUser(123))
+  .map(user => user.name.toUpperCase())
+
+if (error) return
+
+console.log(userName)
+```
+
+## Available on All Functions
+
+The `.map` method is available on all might-fail functions:
+
+<Tabs>
+<Tab name="mightFail">
+```ts
+const [error, result] = await mightFail(promise)
+  .map(data => data.title.toUpperCase())
+
+if (error) {
+  console.error('Error:', error.message)
+  return
+}
+
+console.log(result) // Transformed data
+```
+</Tab>
+
+<Tab name="makeMightFail">
+```ts
+const safeGetUser = makeMightFail(getUserById)
+
+const [error, result] = await safeGetUser(123)
+  .map(user => user.name)
+  
+if (error) {
+  console.error('Error:', error.message)
+  return
+}
+
+console.log(result) // User name
+```
+</Tab>
+
+<Tab name="Static Methods">
+```ts
+// mightFail.all
+const [error, result] = await mightFail.all([
+  fetchProject(id),
+  fetchProjectPositions(id)
+]).map(([project, positions]) => ({
+  ...project,
+  positionCount: positions.length
+}))
+
+// mightFail.race
+const [error, winner] = await mightFail.race([
+  fetchFromServer1(),
+  fetchFromServer2()
+]).map(data => data.result)
+
+// mightFail.any
+const [error, success] = await mightFail.any([
+  tryMethod1(),
+  tryMethod2(),
+  tryMethod3()
+]).map(result => result.value)
+```
+</Tab>
+</Tabs>
+
+## Chaining Multiple Transformations
+
+You can chain multiple `.map` calls for complex transformations:
+
+```ts
+const [error, summary] = await mightFail(fetchUserPosts(userId))
+  .map(posts => posts.filter(post => post.published))
+  .map(published => published.map(post => post.title))
+  .map(titles => titles.join(', '))
+  .map(titleList => `Published posts: ${titleList}`)
+
+if (error) {
+  console.error('Failed to get post summary:', error.message)
+  return
+}
+
+console.log(summary) // "Published posts: Post 1, Post 2, Post 3"
+```
+
+## Error Handling
+
+### Preserves Original Errors
+If the original promise rejects, `.map` preserves the error:
+
+```ts
+const [error, result] = await mightFail(Promise.reject(new Error("API failed")))
+  .map(data => data.toUpperCase())
+
+console.log(error?.message) // "API failed"
+console.log(result) // undefined
+```
+
+### Catches Transformation Errors
+If the transformation function throws, `.map` catches it:
+
+```ts
+const [error, result] = await mightFail(Promise.resolve(null))
+  .map(data => data.name.toUpperCase()) // Will throw on null
+
+console.log(error?.message) // "Cannot read properties of null"
+console.log(result) // undefined
+```
+
+### Error Short-Circuiting
+Once an error occurs, subsequent `.map` calls are skipped:
+
+```ts
+const [error, result] = await mightFail(Promise.reject(new Error("API failed")))
+  .map(data => data.step1()) // Skipped
+  .map(data => data.step2()) // Skipped
+  .map(data => data.step3()) // Skipped
+
+console.log(error?.message) // "API failed"
+```
+
+## Real-World Example
+
+Here's a practical example combining API calls and transformations:
+
+```ts
+async function getUserDashboard(userId: string) {
+  const [error, dashboard] = await mightFail.all([
+    fetchUser(userId),
+    fetchUserPosts(userId),
+    fetchUserStats(userId)
+  ]).map(([user, posts, stats]) => ({
+    user: {
+      name: user.name,
+      email: user.email
+    },
+    summary: {
+      totalPosts: posts.length,
+      publishedPosts: posts.filter(p => p.published).length,
+      totalViews: stats.views,
+      lastActive: user.lastSeen
+    }
+  })).map(data => ({
+    ...data,
+    summary: {
+      ...data.summary,
+      description: `${data.user.name} has ${data.summary.publishedPosts} published posts with ${data.summary.totalViews} total views`
+    }
+  }))
+
+  if (error) {
+    console.error('Failed to load dashboard:', error.message)
+    return null
+  }
+
+  return dashboard
+}
+```
+
+## Type Safety
+
+The `.map` method maintains full type safety. TypeScript will infer the correct types through the transformation chain:
+
+```ts
+// TypeScript knows the types at each step
+const [error, result] = await mightFail(Promise.resolve({ count: 5 }))
+  .map(data => data.count)        // number
+  .map(count => count * 2)        // number  
+  .map(doubled => doubled.toString()) // string
+
+// result is inferred as string | undefined
+// error is inferred as Error | undefined
+```
+
+## Destructuring Still Works
+
+The transformed result maintains the iterable `Either` interface:
+
+```ts
+// Both work identically
+const { error, result } = await mightFail(promise).map(transform)
+const [error, result] = await mightFail(promise).map(transform)
+```
