@@ -2,7 +2,10 @@
 
 * [❌ try, catch, finally](/try-catch-finally-is-bad)
 * [`mightFail`](/might-fail)
+* [`makeMightFail`](/make-might-fail)
 * [`mightFailSync`](/might-fail-sync)
+* [`makeMightFailSync`](/make-might-fail-sync)
+* [`.map` Transformations](/map-transformations)
 * [Static Methods](/static-methods)
 * [Either Type](/either)
 * [Might & Fail](/might-and-fail)
@@ -41,6 +44,32 @@ posts.map((post) => console.log(post.title));
 
 The success case is now the only code that is **not** nested in another block. It's also at the very bottom of the function making it easy to find. 
 
+## Transform Results with `.map`
+
+You can transform successful results without repeatedly handling errors:
+
+```ts
+// Transform results in a functional style
+const [ error, postTitles ] = await mightFail(fetch("/posts"))
+  .map(response => response.json())
+  .map(posts => posts.filter(post => post.published))
+  .map(published => published.map(post => post.title))
+
+if (error) {
+  // Handle any error from the entire chain
+  return
+}
+
+// postTitles contains the transformed result
+console.log(postTitles) // Array of published post titles
+```
+
+The `.map` method:
+- Only executes if the previous step succeeded
+- Catches transformation errors automatically  
+- Can be chained for complex transformations
+- Works with all might-fail functions
+
 <Important>
-  The sucess case is always at the bottom of the function. All of your error handling logic is next to where the error might occur.
+  The success case is always at the bottom of the function. All of your error handling logic is next to where the error might occur.
 </Important>

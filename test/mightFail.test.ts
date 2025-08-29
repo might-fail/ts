@@ -136,4 +136,35 @@ describe("Either factories (Might & Fail)", () => {
       })
     })
   })
+
+  describe("map functionality", () => {
+    test("map transforms successful result", async () => {
+      const { error, result } = await mightFail(Promise.resolve({ count: 5 })).map(data => data.count * 2)
+      expect(error).toBe(undefined)
+      expect(result).toBe(10)
+    })
+
+    test("map preserves error on failed result", async () => {
+      const { error, result } = await mightFail(Promise.reject(new Error("original error"))).map(data => data * 2)
+      expect(result).toBe(undefined)
+      expect(error?.message).toBe("original error")
+    })
+
+    test("map catches errors during transformation", async () => {
+      const { error, result } = await mightFail(Promise.resolve({ count: 5 })).map(() => {
+        throw new Error("transformation error")
+      })
+      expect(result).toBe(undefined)
+      expect(error?.message).toBe("transformation error")
+    })
+
+    test("map can be chained multiple times", async () => {
+      const { error, result } = await mightFail(Promise.resolve({ count: 5 }))
+        .map(data => data.count * 2)
+        .map(doubled => doubled + 1)
+        .map(result => result.toString())
+      expect(error).toBe(undefined)
+      expect(result).toBe("11")
+    })
+  })
 })

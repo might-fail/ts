@@ -1,5 +1,6 @@
 import { type Either } from "./Either.js"
 import { mightFail, mightFailSync } from "./mightFail.js"
+import { MightFailPromise, createMightFailPromise } from "./utils/utils.type.js"
 
 /**
  * Utility type that unwraps a Promise type. If T is a Promise, it extracts the type the Promise resolves to,
@@ -16,7 +17,7 @@ type UnwrapPromise<T> = T extends Promise<infer U> ? U : T
  *
 
  * @template T The function type that returns a Promise.
- * @param {T} func - The async function to be wrapped. This function should return a Promise.
+ * @param func - The async function to be wrapped. This function should return a Promise.
  * @return {Function} A new function that, when called, returns a Promise that resolves with an Either object.
  * The Either object contains either a 'result' with the resolved value of the original Promise, or an 'error' if the Promise was rejected.
  *
@@ -39,12 +40,16 @@ type UnwrapPromise<T> = T extends Promise<infer U> ? U : T
  * }
  * console.log('Fetched data:', result);
  */
+
+
 export function makeMightFail<T extends (...args: any[]) => Promise<any>, E extends Error = Error>(
   func: T
-): (...funcArgs: Parameters<T>) => Promise<Either<UnwrapPromise<ReturnType<T>>, E>> {
-  return async (...args: Parameters<T>) => {
+): (...funcArgs: Parameters<T>) => MightFailPromise<UnwrapPromise<ReturnType<T>>, E> {
+  return (...args: Parameters<T>) => {
     const promise = func(...args)
-    return mightFail(promise)
+    const mightFailPromise = mightFail(promise) as Promise<Either<UnwrapPromise<ReturnType<T>>, E>>
+    
+    return createMightFailPromise<UnwrapPromise<ReturnType<T>>, E>(mightFailPromise)
   }
 }
 
